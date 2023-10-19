@@ -1,3 +1,10 @@
+using Pri.Ca.Core.Interfaces.Repositories;
+using Pri.Ca.Core.Interfaces;
+using Pri.Ca.Core.Services;
+using Pri.Ca.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Pri.Ca.Infrastructure.Repositories;
+
 namespace Pri.Games.Api
 {
     public class Program
@@ -5,8 +12,15 @@ namespace Pri.Games.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
             // Add services to the container.
+            builder.Services.AddDbContext<ApplicationDbContext>(
+                options => options
+                .UseSqlServer(builder.Configuration.GetConnectionString("GamesDb"))
+                );
+            builder.Services.AddScoped<IGameRepository, GameRepository>();
+            builder.Services.AddScoped<IGenreRepository, GenreRepository>();
+            builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
+            builder.Services.AddScoped<IGameService, GameService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

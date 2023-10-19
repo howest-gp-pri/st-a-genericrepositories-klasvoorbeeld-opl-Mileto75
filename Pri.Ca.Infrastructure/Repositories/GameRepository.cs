@@ -42,7 +42,9 @@ namespace Pri.Ca.Infrastructure.Repositories
         public async Task<IEnumerable<Game>> SearchByName(string name)
         {
             var games = GetAll();
-            return await games.Where(s => s.Title.ToUpper() == name.ToUpper()).ToListAsync();
+            return await games.Where(s => s.Title
+            .ToUpper()
+            .Contains(name.ToUpper())).ToListAsync();
         }
     }
 }

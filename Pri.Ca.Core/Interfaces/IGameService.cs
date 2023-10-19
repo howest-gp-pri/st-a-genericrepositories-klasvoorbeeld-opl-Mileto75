@@ -15,5 +15,6 @@ namespace Pri.Ca.Core.Interfaces
         Task<ResultModel<Game>> DeleteAsync(int id);
         Task<ResultModel<Game>> GetAllAsync();
         Task<ResultModel<Game>> GetByIdAsync(int id);
+        Task<ResultModel<Game>> SearchByName(string name);
     }
 }

@@ -1,7 +1,9 @@
-﻿using Pri.Ca.Core.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Pri.Ca.Core.Entities;
 using Pri.Ca.Core.Interfaces;
 using Pri.Ca.Core.Interfaces.Repositories;
 using Pri.Ca.Core.Services.Models;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,27 +18,32 @@ namespace Pri.Ca.Core.Services
         private readonly IGenreRepository _genreRepository;
         private readonly IPublisherRepository _publisherRepository;
 
-        public GameService(IGameRepository gameRepository)
+        public GameService(IGameRepository gameRepository, IGenreRepository genreRepository, IPublisherRepository publisherRepository)
         {
             _gameRepository = gameRepository;
+            _genreRepository = genreRepository;
+            _publisherRepository = publisherRepository;
         }
 
         public async Task<ResultModel<Game>> AddAsync(GameAddModel gameAddModel)
         {
-            //this is missing extra checks on
-            //foreign key data Publisher and Genre
-            //due to lack of repositories
             var publisher = await _publisherRepository.GetByIdAsync(gameAddModel.PublisherId);
             if(publisher == null)
             {
-                return CreateErrorModel("Unkown publisher");
+                return CreateErrorModel("Unknown publisher");
             }
-            var genres =  _genreRepository.GetAll();
-            if(genres
-                .Where(g => gameAddModel.GenreIds.Contains(g.Id)).Count() != gameAddModel.GenreIds.Count())
+            var genresCount = _genreRepository.GetAll()
+                .Where(g => gameAddModel.GenreIds.Contains(g.Id)).Count();
+            if (genresCount
+                != gameAddModel.GenreIds.Count())
             {
                 return CreateErrorModel("Unknown genres");
             }
+            if(genresCount == 0 && gameAddModel.GenreIds.Count() == 0)
+            {
+                return CreateErrorModel("Please provide a genre!");
+            }
+            
             if(_gameRepository.GetAll().Any(g => g.Title.ToUpper().Equals(gameAddModel.Title.ToUpper())))
             {
                 return CreateErrorModel("Name exists");
@@ -83,6 +90,21 @@ namespace Pri.Ca.Core.Services
                 return CreateErrorModel("Game not found");
             }
             return CreateResultModel(new List<Game> { game });
+        }
+
+        public async Task<ResultModel<Game>> SearchByName(string name)
+        {
+            //get the games
+            //var queryObject = _gameRepository.GetAll().
+            //    Where(g => g.Title.ToUpper().Equals(name.ToUpper()));
+            //var games = await queryObject.ToListAsync();
+            //return CreateResultModel(games);
+            var games = await _gameRepository.SearchByName(name);
+            if(games.Count() == 0)
+            {
+                return CreateErrorModel("No games found!");
+            }
+            return CreateResultModel(games);
         }
 
         public async Task<ResultModel<Game>> UpdateAsync(GameUpdateModel gameUpdateModel)
