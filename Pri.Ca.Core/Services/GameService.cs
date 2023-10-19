@@ -17,12 +17,14 @@ namespace Pri.Ca.Core.Services
         private readonly IGameRepository _gameRepository;
         private readonly IGenreRepository _genreRepository;
         private readonly IPublisherRepository _publisherRepository;
+        private readonly IFileService _fileService;
 
-        public GameService(IGameRepository gameRepository, IGenreRepository genreRepository, IPublisherRepository publisherRepository)
+        public GameService(IGameRepository gameRepository, IGenreRepository genreRepository, IPublisherRepository publisherRepository, IFileService fileService)
         {
             _gameRepository = gameRepository;
             _genreRepository = genreRepository;
             _publisherRepository = publisherRepository;
+            _fileService = fileService;
         }
 
         public async Task<ResultModel<Game>> AddAsync(GameAddModel gameAddModel)
@@ -48,11 +50,18 @@ namespace Pri.Ca.Core.Services
             {
                 return CreateErrorModel("Name exists");
             }
+            //store the file
+            var fileResult = await _fileService.StoreFile<Game>(gameAddModel.Image, "images");
+            if(!fileResult.IsSuccess)
+            {
+                return CreateErrorModel(fileResult.Error);
+            }
             var game = new Game
             {
                 Title = gameAddModel.Title,
                 Description = gameAddModel.Description,
                 PublisherId = gameAddModel.PublisherId,
+                Image = fileResult.Filename
                 //genres later
             };
             if(!await _gameRepository.AddAsync(game))
@@ -65,11 +74,11 @@ namespace Pri.Ca.Core.Services
         public async Task<ResultModel<Game>> DeleteAsync(int id)
         {
             var game = await _gameRepository.GetByIdAsync(id);
-            if(game == null)
+            if (game == null)
             {
                 return CreateErrorModel("Game not found.");
             }
-            if(!await _gameRepository.DeleteAsync(game))
+            if (!await _gameRepository.DeleteAsync(game))
             {
                 return CreateErrorModel("Something went wrong...Please try again later");
             }
@@ -117,15 +126,44 @@ namespace Pri.Ca.Core.Services
             {
                 return CreateErrorModel("Game not found.");
             }
+            var publisher = await _publisherRepository.GetByIdAsync(gameUpdateModel.PublisherId);
+            if (publisher == null)
+            {
+                return CreateErrorModel("Unknown publisher");
+            }
+            var genresCount = _genreRepository.GetAll()
+                .Where(g => gameUpdateModel.GenreIds.Contains(g.Id)).Count();
+            if (genresCount
+                != gameUpdateModel.GenreIds.Count())
+            {
+                return CreateErrorModel("Unknown genres");
+            }
+            if (genresCount == 0 && gameUpdateModel.GenreIds.Count() == 0)
+            {
+                return CreateErrorModel("Please provide a genre!");
+            }
+            //check for title only if title update
+            if(game.Title != gameUpdateModel.Title)
+            {
+                if (_gameRepository.GetAll().Any(g => g.Title.ToUpper().Equals(gameUpdateModel.Title.ToUpper())))
+                {
+                    return CreateErrorModel("Name exists");
+                }
+            }
             game.Title = gameUpdateModel.Title;
             game.Description = gameUpdateModel.Description;
             game.PublisherId = gameUpdateModel.PublisherId;
-            //genres will be updated in a later version
-            if(!await _gameRepository.UpdateAsync(game))
+            game.Genres = await _genreRepository
+                .GetAll().Where(g => gameUpdateModel.GenreIds.Contains(g.Id)).ToListAsync();
+            if (!await _gameRepository.UpdateAsync(game))
             {
                 return CreateErrorModel("Unknown error.");
             }
             return CreateResultModel(null);
+        }
+        public async Task<bool> IfExists(int id)
+        {
+            return await _gameRepository.GetAll().AnyAsync(g => g.Id == id);
         }
         private ResultModel<Game> CreateErrorModel(string error)
         {

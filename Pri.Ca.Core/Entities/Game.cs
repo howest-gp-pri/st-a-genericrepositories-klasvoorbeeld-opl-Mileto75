@@ -13,5 +13,6 @@ namespace Pri.Ca.Core.Entities
         public Publisher Publisher { get; set; }
         public int PublisherId { get; set; }
         public ICollection<Genre> Genres { get; set; }
+        public string Image { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,6 @@ namespace Pri.Ca.Core.Services.Models
         public string Description { get; set; }
         public int PublisherId { get; set; }
         public IEnumerable<int> GenreIds { get; set; }
+        public IFormFile Image { get; set; }
     }
 }

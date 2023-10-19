@@ -20,6 +20,7 @@ namespace Pri.Games.Api
             builder.Services.AddScoped<IGameRepository, GameRepository>();
             builder.Services.AddScoped<IGenreRepository, GenreRepository>();
             builder.Services.AddScoped<IPublisherRepository, PublisherRepository>();
+            builder.Services.AddScoped<IFileService, FileService>();
             builder.Services.AddScoped<IGameService, GameService>();
 
             builder.Services.AddControllers();
@@ -37,7 +38,7 @@ namespace Pri.Games.Api
             }
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
             app.UseAuthorization();
 
 

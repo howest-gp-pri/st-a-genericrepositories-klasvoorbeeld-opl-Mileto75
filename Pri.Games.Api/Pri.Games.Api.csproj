@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Pri.Ca.Infrastructure\Pri.Ca.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>

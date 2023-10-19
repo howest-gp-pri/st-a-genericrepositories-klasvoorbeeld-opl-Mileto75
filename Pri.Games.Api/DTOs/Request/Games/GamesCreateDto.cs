@@ -11,5 +11,6 @@ namespace Pri.Games.Api.DTOs.Request.Games
         public int PublisherId { get; set; }
         [Required(ErrorMessage = "Please provide a genre!")]
         public IEnumerable<int> Genres { get; set; }
+        public IFormFile Image { get; set; }
     }
 }

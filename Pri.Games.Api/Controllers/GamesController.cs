@@ -5,6 +5,7 @@ using Pri.Ca.Core.Services.Models;
 using Pri.Games.Api.DTOs;
 using Pri.Games.Api.DTOs.Request.Games;
 using Pri.Games.Api.DTOs.Response.Games;
+using Pri.Games.Api.Extensions;
 
 namespace Pri.Games.Api.Controllers
 {
@@ -28,22 +29,7 @@ namespace Pri.Games.Api.Controllers
             {
                 var gamesGetAllDto = new GamesGetAllDto
                 {
-                    Games = result.Items.Select(g => new GamesGetDto 
-                    {
-                        Id = g.Id,
-                        Value = g.Title,
-                        Publisher = new BaseDto 
-                        {
-                            Id = g.Publisher.Id,
-                            Value = g.Publisher.Name
-                        },
-                        Genres = g.Genres.Select(g => new BaseDto 
-                        {
-                            Id = g.Id,
-                            Value = g.Name
-                        }),
-                        Description = g.Description
-                    })
+                    Games = result.Items.Map(HttpContext)
                 };
                 return Ok(gamesGetAllDto);
             }
@@ -58,22 +44,7 @@ namespace Pri.Games.Api.Controllers
                 return NotFound(result.Errors.First());
             }
             var game = result.Items.First();
-            var gamesGetDto = new GamesGetDto
-            {
-                Id = game.Id,
-                Value = game.Title,
-                Description = game.Description,
-                Publisher = new BaseDto
-                {
-                    Id = game.Publisher.Id,
-                    Value = game.Publisher.Name
-                },
-                Genres = game.Genres.Select(g => new BaseDto 
-                {
-                    Id = g.Id,
-                    Value = g.Name
-                }),
-            };
+            var gamesGetDto = game.Map(HttpContext);
             return Ok(gamesGetDto);
         }
         [HttpGet("search/{name}")]
@@ -86,39 +57,17 @@ namespace Pri.Games.Api.Controllers
             }
             var gamesSearchByNameDto = new GamesSearchByNameDto
             {
-                Games = result.Items.Select(g => new GamesGetDto
-                {
-                    Id = g.Id,
-                    Value = g.Title,
-                    Publisher = new BaseDto
-                    {
-                        Id = g.Publisher.Id,
-                        Value = g.Publisher.Name
-                    },
-                    Genres = g.Genres.Select(g => new BaseDto
-                    {
-                        Id = g.Id,
-                        Value = g.Name
-                    })
-                })
+                Games = result.Items.Map(HttpContext)
             };
             return Ok(gamesSearchByNameDto);
         }
         [HttpPost]
-        public async Task<IActionResult> Create(GamesCreateDto gamesCreateDto)
+        public async Task<IActionResult> Create([FromForm]GamesCreateDto gamesCreateDto)
         {
-            var gameAddmodel = new GameAddModel
-            {
-                Title = gamesCreateDto.Title,
-                Description = gamesCreateDto.Description,
-                PublisherId = gamesCreateDto.PublisherId,
-                GenreIds = gamesCreateDto.Genres,
-            };
-            var result = await _gameService
-                .AddAsync(gameAddmodel);
+            var result = await _gameService.AddAsync(gamesCreateDto.Map());
             if (result.IsSuccess)
             {
-                return Ok("created"); 
+                return Ok();
             }
             foreach(var error in result.Errors)
             {
@@ -127,14 +76,26 @@ namespace Pri.Games.Api.Controllers
             return BadRequest(ModelState.Values);
         }
         [HttpPut]
-        public IActionResult Update(int id)
+        public async Task<IActionResult> Update(GamesUpdateDto gamesUpdateDto)
         {
-            return Ok("update");
+            var result = await _gameService.UpdateAsync(gamesUpdateDto.Map());
+            if (result.IsSuccess)
+            {
+                return Ok("update");
+            }
+            //need to refactor this to allow a badrequest return
+            //next week
+            return NotFound(result.Errors);
         }
-        [HttpDelete]
-        public IActionResult Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            return Ok("Delete");
+            var result = await _gameService.DeleteAsync(id);
+            if(result.IsSuccess)
+            {
+                return Ok("Delete");
+            }
+            return NotFound(result.Errors);
         }
     }
 }

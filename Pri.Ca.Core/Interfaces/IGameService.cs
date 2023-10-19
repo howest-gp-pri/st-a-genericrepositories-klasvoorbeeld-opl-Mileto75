@@ -16,5 +16,6 @@ namespace Pri.Ca.Core.Interfaces
         Task<ResultModel<Game>> GetAllAsync();
         Task<ResultModel<Game>> GetByIdAsync(int id);
         Task<ResultModel<Game>> SearchByName(string name);
+        Task<bool> IfExists(int id);
     }
 }
